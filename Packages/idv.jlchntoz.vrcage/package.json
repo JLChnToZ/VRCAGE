@@ -1,0 +1,15 @@
+{
+  "name": "idv.jlchntoz.vrcage",
+  "displayName": "idv.jlchntoz.vrcage",
+  "version": "0.0.1",
+  "description": "This is an advanced player/pickupable gimmicks physics system for VRChat worlds.",
+  "gitDependencies": {},
+  "vpmDependencies": {
+    "com.vrchat.udonsharp": "1.1.1"
+  },
+  "legacyFolders": {},
+  "legacyFiles": {},
+  "localPath": "E:\\Codes\\VRChat\\VRCAGE\\Packages\\idv.jlchntoz.vrcage",
+  "type": "module",
+  "unity": "2019.4"
+}
