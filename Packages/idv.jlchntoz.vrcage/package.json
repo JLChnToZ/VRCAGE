@@ -1,6 +1,6 @@
 {
   "name": "idv.jlchntoz.vrcage",
-  "displayName": "idv.jlchntoz.vrcage",
+  "displayName": "Anti Gravity Engine for VRChat",
   "version": "0.0.1",
   "description": "This is an advanced player/pickupable gimmicks physics system for VRChat worlds.",
   "gitDependencies": {},
@@ -9,7 +9,5 @@
   },
   "legacyFolders": {},
   "legacyFiles": {},
-  "localPath": "E:\\Codes\\VRChat\\VRCAGE\\Packages\\idv.jlchntoz.vrcage",
-  "type": "module",
   "unity": "2019.4"
 }

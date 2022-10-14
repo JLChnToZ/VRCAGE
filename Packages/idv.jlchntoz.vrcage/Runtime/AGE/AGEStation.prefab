@@ -86,7 +86,7 @@ MonoBehaviour:
     PrefabModifications: []
     SerializationNodes: []
   _udonSharpBackingUdonBehaviour: {fileID: 3245082962121723504}
-  isManualSync: 0
+  isManualSync: 1
 --- !u!114 &3245082962121723504
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -106,7 +106,7 @@ MonoBehaviour:
   SynchronizePosition: 0
   AllowCollisionOwnershipTransfer: 0
   Reliable: 0
-  _syncMethod: 2
+  _syncMethod: 3
   serializedProgramAsset: {fileID: 11400000, guid: 78241255b7a67b74fb4b03961551f88a,
     type: 2}
   programSource: {fileID: 11400000, guid: 45d2a9b7a45252c43a18efcea415ee5d, type: 2}
