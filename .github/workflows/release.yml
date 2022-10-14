@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
   push:
     branches: main
-    paths: Packages/com.vrchat.demo-template/**
+    paths: Packages/idv.jlchntoz.vrcage/**
 
 env:
-  packageName: "com.vrchat.demo-template"
+  packageName: "idv.jlchntoz.vrcage"
 
 jobs:
   build:
