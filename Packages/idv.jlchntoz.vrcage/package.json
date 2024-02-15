@@ -1,13 +1,20 @@
 {
   "name": "idv.jlchntoz.vrcage",
   "displayName": "Anti Gravity Engine for VRChat",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "This is an advanced player/pickupable gimmicks physics system for VRChat worlds.",
   "gitDependencies": {},
   "vpmDependencies": {
-    "com.vrchat.udonsharp": "1.1.1"
+    "com.vrchat.worlds": "3.x.x"
   },
   "legacyFolders": {},
   "legacyFiles": {},
-  "unity": "2019.4"
+  "license": "MIT",
+  "vrchatVersion": "2022.1.1",
+  "unity": "2019.4",
+  "author": {
+    "name": "Jeremy Lam aka. Vistanz",
+    "email": "me@moka-rin.moe",
+    "url": "https://xtl.booth.pm"
+  }
 }
