@@ -11,7 +11,7 @@ namespace JLChnToZ.VRC.AGE {
         [SerializeField] bool detachOnRespawn;
         [SerializeField] bool checkPickups;
         [SerializeField] bool dropUnsupportedPickups;
-        [SerializeField] UdonSharpBehaviour customPositionHandler;
+        [SerializeField] AntiGravityHandlerBase customPositionHandler;
         AntiGravityEngine[] instances;
         bool init;
         VRCPlayerApi localPlayer;
@@ -21,7 +21,7 @@ namespace JLChnToZ.VRC.AGE {
         AntiGravityAutoSwitch leftHandSwitch, rightHandSwitch;
 
         public Transform Root => root;
-        public UdonSharpBehaviour CustomPositionHandler => customPositionHandler;
+        public AntiGravityHandlerBase CustomPositionHandler => customPositionHandler;
         public AntiGravityEngine ActiveInstance {
             get {
                 if (Utilities.IsValid(activeInstance) && !activeInstance.LocalOccupied)

@@ -5,12 +5,11 @@ using VRC.SDKBase;
 
 namespace JLChnToZ.VRC.AGE.Extras {
     [UdonBehaviourSyncMode(BehaviourSyncMode.NoVariableSync)]
-    public class TileLooper : UdonSharpBehaviour {
+    public class TileLooper : AntiGravityHandlerBase {
         [SerializeField] Transform[] sceneObjects;
         [SerializeField] Vector3 repeat;
         [SerializeField] float lookAtCenterDistance;
-        
-        [NonSerialized] public UdonSharpBehaviour ageTarget;
+
         VRCPlayerApi player;
         Transform[] alignX, alignY, alignZ;
         float[] orgX, orgY, orgZ;
@@ -117,18 +116,18 @@ namespace JLChnToZ.VRC.AGE.Extras {
             return offset;
         }
 
-        public void _OnSerializePosition() {
+        public override void _OnSerializePosition() {
             isTrackingPlayer = true;
         }
 
-        public void _OnDeserializePosition() {
+        public override void _OnDeserializePosition() {
             var playerPos = PlayerPos;
-            var pos = (Vector3)ageTarget.GetProgramVariable("relativePosition");
+            var pos = RelativePosition;
             if (repeat.x > 0) pos.x = GetRelativePos(playerPos.x, pos.x, repeat.x);
             if (repeat.y > 0) pos.y = GetRelativePos(playerPos.y, pos.y, repeat.y);
             if (repeat.z > 0) pos.z = GetRelativePos(playerPos.z, pos.z, repeat.z);
             var root = (Transform)ageTarget.GetProgramVariable("root");
-            ageTarget.SetProgramVariable("absolutePosition", root.TransformPoint(pos));
+            AbsolutePosition = root.TransformPoint(pos);
         }
 
         void ClampLocalPlayer() {

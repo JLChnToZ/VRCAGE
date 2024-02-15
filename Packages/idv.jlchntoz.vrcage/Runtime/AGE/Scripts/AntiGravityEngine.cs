@@ -7,24 +7,14 @@ namespace JLChnToZ.VRC.AGE {
 #if !COMPILER_UDONSHARP
     [RequireComponent(typeof(global::VRC.SDK3.Components.VRCStation))]
 #endif
-    public class AntiGravityEngine : UdonSharpBehaviour {
-        [Tooltip("Enable this if current instance is setted to manual sync.")]
-        public bool isManualSync;
-        [NonSerialized] public Transform root;
-        [NonSerialized] public UdonSharpBehaviour customPositionHandler;
+    public class AntiGravityEngine : AntiGravityEngineBase {
         [NonSerialized] public bool autoReattach;
         [NonSerialized] public bool detachOnRespawn;
-        [NonSerialized] public Vector3 absolutePosition;
-        [NonSerialized] public Quaternion absoluteRotation;
-        [NonSerialized] public Vector3 relativePosition;
-        [NonSerialized] public Quaternion relativeRotation;
         [NonSerialized] public float lerpScale = 10;
         Transform anchor;
         VRCStation station;
         VRCPlayerApi localPlayer;
         [UdonSynced] ushort occupiedId;
-        [UdonSynced] Vector3 position;
-        [UdonSynced] Quaternion rotation;
         bool mobility = true;
         Vector3 smoothPosition;
         Quaternion smoothRotation = Quaternion.identity;
@@ -82,8 +72,8 @@ namespace JLChnToZ.VRC.AGE {
                 absolutePosition = root.TransformPoint(relativePosition);
                 absoluteRotation = root.rotation * relativeRotation;
                 if (customPositionHandler != null) {
-                    customPositionHandler.SetProgramVariable("ageTarget", this);
-                    customPositionHandler.SendCustomEvent("_OnDeserializePosition");
+                    customPositionHandler.ageTarget = this;
+                    customPositionHandler._OnDeserializePosition();
                 }
                 anchor.SetPositionAndRotation(absolutePosition, absoluteRotation);
             }
@@ -95,8 +85,8 @@ namespace JLChnToZ.VRC.AGE {
             relativePosition = root.InverseTransformPoint(absolutePosition);
             relativeRotation = Quaternion.Inverse(root.rotation) * absoluteRotation;
             if (customPositionHandler != null) {
-                customPositionHandler.SetProgramVariable("ageTarget", this);
-                customPositionHandler.SendCustomEvent("_OnSerializePosition");
+                customPositionHandler.ageTarget = this;
+                customPositionHandler._OnSerializePosition();
             }
             smoothPosition = position = relativePosition;
             smoothRotation = rotation = relativeRotation;
