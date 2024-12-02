@@ -14,6 +14,7 @@ namespace JLChnToZ.VRC.AGE {
         [SerializeField] AntiGravityHandlerBase customPositionHandler;
         bool init;
         VRCPlayerApi localPlayer;
+        AntiGravityEngine template;
         AntiGravityEngine localInstance;
         VRC_Pickup leftHandItem, rightHandItem;
         bool leftHandSupported, rightHandSupported;
@@ -28,25 +29,22 @@ namespace JLChnToZ.VRC.AGE {
             init = true;
             if (root == null) root = transform;
             localPlayer = Networking.LocalPlayer;
+            template = GetComponentInChildren<AntiGravityEngine>(true);
         }
 
         public override void OnPlayerRestored(VRCPlayerApi player) {
-            AntiGravityEngine instance = null;
-            foreach (var playerObj in player.GetPlayerObjects()) {
-                instance = playerObj.GetComponent<AntiGravityEngine>();
-                if (Utilities.IsValid(instance)) {
-                    instance.root = root;
-                    instance.autoReattach = autoReattach;
-                    instance.detachOnRespawn = detachOnRespawn;
-                    instance.customPositionHandler = customPositionHandler;
-                    if (player.isLocal) {
-                        localInstance = instance;
-                        if (autoUseOnLogin) SendCustomEventDelayedSeconds(nameof(Use), 3F);
-                    }
-                    return;
-                }
+            var instance = (AntiGravityEngine)player.FindComponentInPlayerObjects(template);
+            if (!Utilities.IsValid(instance)) {
+                Debug.LogWarning("No AntiGravityEngine found in player objects.");
+                return;
             }
-            Debug.LogWarning("No AntiGravityEngine found in player objects.");
+            instance.root = root;
+            instance.autoReattach = autoReattach;
+            instance.detachOnRespawn = detachOnRespawn;
+            instance.customPositionHandler = customPositionHandler;
+            if (!player.isLocal) return;
+            localInstance = instance;
+            if (autoUseOnLogin) SendCustomEventDelayedSeconds(nameof(Use), 3F);
         }
 
         void Uptate() {
