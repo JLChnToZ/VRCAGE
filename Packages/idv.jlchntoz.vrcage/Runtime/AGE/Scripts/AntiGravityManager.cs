@@ -12,37 +12,41 @@ namespace JLChnToZ.VRC.AGE {
         [SerializeField] bool checkPickups;
         [SerializeField] bool dropUnsupportedPickups;
         [SerializeField] AntiGravityHandlerBase customPositionHandler;
-        AntiGravityEngine[] instances;
         bool init;
         VRCPlayerApi localPlayer;
-        AntiGravityEngine activeInstance;
+        AntiGravityEngine localInstance;
         VRC_Pickup leftHandItem, rightHandItem;
         bool leftHandSupported, rightHandSupported;
         AntiGravityAutoSwitch leftHandSwitch, rightHandSwitch;
 
         public Transform Root => root;
         public AntiGravityHandlerBase CustomPositionHandler => customPositionHandler;
-        public AntiGravityEngine ActiveInstance {
-            get {
-                if (Utilities.IsValid(activeInstance) && !activeInstance.LocalOccupied)
-                    activeInstance = null;
-                return activeInstance;
-            }
-        }
+        public AntiGravityEngine ActiveInstance => localInstance;
 
         void Start() {
             if (init) return;
             init = true;
-            instances = GetComponentsInChildren<AntiGravityEngine>(true);
             if (root == null) root = transform;
-            foreach (var instance in instances) {
-                instance.root = root;
-                instance.autoReattach = autoReattach;
-                instance.detachOnRespawn = detachOnRespawn;
-                instance.customPositionHandler = customPositionHandler;
-            }
-            if (autoUseOnLogin) SendCustomEventDelayedSeconds(nameof(Use), Random.Range(3F, 6F));
             localPlayer = Networking.LocalPlayer;
+        }
+
+        public override void OnPlayerRestored(VRCPlayerApi player) {
+            AntiGravityEngine instance = null;
+            foreach (var playerObj in player.GetPlayerObjects()) {
+                instance = playerObj.GetComponent<AntiGravityEngine>();
+                if (Utilities.IsValid(instance)) {
+                    instance.root = root;
+                    instance.autoReattach = autoReattach;
+                    instance.detachOnRespawn = detachOnRespawn;
+                    instance.customPositionHandler = customPositionHandler;
+                    if (player.isLocal) {
+                        localInstance = instance;
+                        if (autoUseOnLogin) SendCustomEventDelayedSeconds(nameof(Use), 3F);
+                    }
+                    return;
+                }
+            }
+            Debug.LogWarning("No AntiGravityEngine found in player objects.");
         }
 
         void Uptate() {
@@ -94,49 +98,29 @@ namespace JLChnToZ.VRC.AGE {
 
         public bool Use() {
             Start();
-            if (Utilities.IsValid(activeInstance))
-                activeInstance.Exit();
-            foreach (var age in instances)
-                if (age.Use()) {
-                    activeInstance = age;
-                    SendCustomEventDelayedSeconds(nameof(_CheckUse), 0.5F);
-                    return true;
-                }
+            if (!Utilities.IsValid(localInstance)) return false;
+            if (localInstance.IsSeated) localInstance.Exit();
+            if (localInstance.Use()) return true;
             return false;
         }
 
         public bool UseAt(Vector3 position, Quaternion rotation) {
             Start();
-            if (Utilities.IsValid(activeInstance))
-                activeInstance.Exit();
-            foreach (var age in instances)
-                if (age.UseAt(position, rotation)) {
-                    activeInstance = age;
-                    return true;
-                }
-            return false;
-        }
-
-        public void _CheckUse() {
-            if (Utilities.IsValid(activeInstance) && !activeInstance.LocalOccupied) {
-                Use();
-                SendCustomEventDelayedSeconds(nameof(_CheckUse), 0.5F);
-            }
+            localInstance.UseAt(position, rotation);
+            return true;
         }
 
         public void TeleportTo(Vector3 position, Quaternion rotation) {
             Start();
-            if (Utilities.IsValid(activeInstance))
-                activeInstance.TeleportTo(position, rotation);
+            if (Utilities.IsValid(localInstance))
+                localInstance.TeleportTo(position, rotation);
             else
                 Networking.LocalPlayer.TeleportTo(position, rotation);
         }
 
         public void Exit() {
             Start();
-            foreach (var age in instances)
-                age.Exit();
-            activeInstance = null;
+            localInstance.Exit();
         }
     }
 }

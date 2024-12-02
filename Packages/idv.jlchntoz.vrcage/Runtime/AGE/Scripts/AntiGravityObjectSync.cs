@@ -80,8 +80,15 @@ namespace JLChnToZ.VRC.AGE {
                     smoothPosition = relativePosition;
                     smoothRotation = relativeRotation;
                 } else {
-                    var trackingData = localPlayer.GetTrackingData((VRCPlayerApi.TrackingDataType)pickupState);
-                    smoothPosition = transform.position - trackingData.position;
+                    smoothPosition = transform.position;
+                    switch ((VRCPlayerApi.TrackingDataType)pickupState) {
+                        case VRCPlayerApi.TrackingDataType.LeftHand:
+                            smoothPosition = playerAttachedAGE.LeftHandMatrix.inverse.MultiplyPoint3x4(smoothPosition);
+                        break;
+                        case VRCPlayerApi.TrackingDataType.RightHand:
+                            smoothPosition = playerAttachedAGE.RightHandMatrix.inverse.MultiplyPoint3x4(smoothPosition);
+                        break;
+                    }
                     smoothRotation = relativeRotation;
                 }
                 if (!localOnly && (smoothPosition != position || smoothRotation != rotation)) {
@@ -129,8 +136,15 @@ namespace JLChnToZ.VRC.AGE {
                     customPositionHandler._OnDeserializePosition();
                 }
                 if (pickupState != 0) {
-                    var trackingData = Networking.GetOwner(gameObject).GetTrackingData((VRCPlayerApi.TrackingDataType)pickupState);
-                    absolutePosition = smoothPosition + trackingData.position;
+                    absolutePosition = smoothPosition;
+                    switch ((VRCPlayerApi.TrackingDataType)pickupState) {
+                        case VRCPlayerApi.TrackingDataType.LeftHand:
+                            absolutePosition = playerAttachedAGE.LeftHandMatrix.MultiplyPoint3x4(absolutePosition);
+                        break;
+                        case VRCPlayerApi.TrackingDataType.RightHand:
+                            absolutePosition = playerAttachedAGE.RightHandMatrix.MultiplyPoint3x4(absolutePosition);
+                        break;
+                    }
                 }
                 transform.SetPositionAndRotation(absolutePosition, absoluteRotation);
                 if (rigidbody != null) {
