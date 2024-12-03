@@ -6,10 +6,12 @@ using VRC.SDK3.Components;
 
 namespace JLChnToZ.VRC.AGE {
     public class AntiGravityObjectSync : AntiGravityEngineBase {
+        [SerializeField, HideInInspector] AntiGravityManager manager;
         [SerializeField] bool localOnly;
         public bool pickupable = true;
         [NonSerialized] public float lerpScale = 10;
-        [NonSerialized] public AntiGravityEngine playerAttachedAGE;
+        AntiGravityEngine playerAttachedAGE;
+        VRCPlayerApi ageOwner;
         [UdonSynced] byte pickupState;
         byte localPickupState;
         VRCPickup pickup;
@@ -18,8 +20,8 @@ namespace JLChnToZ.VRC.AGE {
         bool isKinematic;
         bool useGravity;
         Transform lastRoot;
-        Vector3 lastPosition;
-        Quaternion lastRotation;
+        Vector3 lastRootPosition, lastPosition;
+        Quaternion lastRootRotation, lastRotation;
         byte lastPickupState;
         Vector3 smoothPosition;
         Quaternion smoothRotation = Quaternion.identity;
@@ -28,7 +30,7 @@ namespace JLChnToZ.VRC.AGE {
             localPlayer = Networking.LocalPlayer;
             pickup = (VRCPickup)GetComponent(typeof(VRCPickup));
             rigidbody = GetComponent<Rigidbody>();
-            if (rigidbody != null) {
+            if (Utilities.IsValid(rigidbody)) {
                 isKinematic = rigidbody.isKinematic;
                 useGravity = rigidbody.useGravity;
             }
@@ -37,12 +39,12 @@ namespace JLChnToZ.VRC.AGE {
         void InitRoot() {
             if (lastRoot == root) return;
             lastRoot = root;
-            if (root == null) {
-                lastPosition = Vector3.zero;
-                lastRotation = Quaternion.identity;
+            if (Utilities.IsValid(root)) {
+                lastRootPosition = root.position;
+                lastRootRotation = root.rotation;
             } else {
-                lastPosition = root.position;
-                lastRotation = root.rotation;
+                lastRootPosition = Vector3.zero;
+                lastRootRotation = Quaternion.identity;
             }
         }
 
@@ -52,65 +54,57 @@ namespace JLChnToZ.VRC.AGE {
             if (localOnly || Networking.IsOwner(gameObject)) {
                 Vector3 deltaPosition;
                 Quaternion deltaRotation;
-                if (root == null) {
-                    deltaPosition = Vector3.zero;
-                    deltaRotation = Quaternion.identity;
-                } else {
+                if (Utilities.IsValid(root)) {
                     absolutePosition = root.position;
                     absoluteRotation = root.rotation;
-                    deltaPosition = absolutePosition - lastPosition;
-                    deltaRotation = Quaternion.Inverse(lastRotation) * absoluteRotation;
-                    lastPosition = absolutePosition;
-                    lastRotation = absoluteRotation;
+                    deltaPosition = absolutePosition - lastRootPosition;
+                    deltaRotation = Quaternion.Inverse(lastRootRotation) * absoluteRotation;
+                    lastRootPosition = absolutePosition;
+                    lastRootRotation = absoluteRotation;
+                } else {
+                    deltaPosition = Vector3.zero;
+                    deltaRotation = Quaternion.identity;
                 }
                 absolutePosition = transform.position + deltaPosition;
                 absoluteRotation = deltaRotation * transform.rotation;
-                if (root == null) {
-                    relativePosition = absolutePosition;
-                    relativeRotation = absoluteRotation;
-                } else {
+                if (Utilities.IsValid(root)) {
                     relativePosition = root.InverseTransformPoint(absolutePosition);
                     relativeRotation = Quaternion.Inverse(root.rotation) * absoluteRotation;
+                } else {
+                    relativePosition = absolutePosition;
+                    relativeRotation = absoluteRotation;
                 }
-                if (customPositionHandler != null) {
+                if (Utilities.IsValid(customPositionHandler)) {
                     customPositionHandler.ageTarget = this;
                     customPositionHandler._OnSerializePosition();
                 }
-                if (pickupState == 0) {
-                    smoothPosition = relativePosition;
-                    smoothRotation = relativeRotation;
-                } else {
-                    smoothPosition = transform.position;
-                    switch ((VRCPlayerApi.TrackingDataType)pickupState) {
-                        case VRCPlayerApi.TrackingDataType.LeftHand:
-                            smoothPosition = playerAttachedAGE.LeftHandMatrix.inverse.MultiplyPoint3x4(smoothPosition);
-                        break;
-                        case VRCPlayerApi.TrackingDataType.RightHand:
-                            smoothPosition = playerAttachedAGE.RightHandMatrix.inverse.MultiplyPoint3x4(smoothPosition);
-                        break;
+                smoothPosition = pickupState == 0 ? relativePosition :
+                    GetOnHandMatrix().inverse.MultiplyPoint3x4(transform.position);
+                smoothRotation = relativeRotation;
+                if (!localOnly) {
+                    int newRotationBits = PackQuaternion(smoothRotation);
+                    if (smoothPosition != position || newRotationBits != rotationBits) {
+                        position = smoothPosition;
+                        rotationBits = newRotationBits;
+                        if (isManualSync) RequestSerialization();
                     }
-                    smoothRotation = relativeRotation;
                 }
-                if (!localOnly && (smoothPosition != position || smoothRotation != rotation)) {
-                    position = smoothPosition;
-                    rotation = smoothRotation;
-                    if (isManualSync) RequestSerialization();
-                }
-                if (customPositionHandler != null)
+                if (Utilities.IsValid(customPositionHandler))
                     customPositionHandler._OnDeserializePosition();
                 if (pickupState == 0) {
                     transform.SetPositionAndRotation(absolutePosition, absoluteRotation);
-                    if (rigidbody != null) {
+                    if (Utilities.IsValid(rigidbody)) {
                         rigidbody.position = absolutePosition;
                         rigidbody.rotation = absoluteRotation;
                     }
                 }
-                if (rigidbody != null) {
+                if (Utilities.IsValid(rigidbody)) {
                     rigidbody.useGravity = useGravity && pickupState == 0;
                     rigidbody.isKinematic = isKinematic || pickupState != 0;
                 }
                 lastPickupState = pickupState;
             } else {
+                var rotation = UnpackRotation(rotationBits);
                 if (lastPickupState == pickupState) {
                     float t = Time.deltaTime * lerpScale;
                     smoothPosition = Vector3.Lerp(smoothPosition, position, t);
@@ -122,44 +116,49 @@ namespace JLChnToZ.VRC.AGE {
                 }
                 relativePosition = smoothPosition;
                 relativeRotation = smoothRotation;
-                if (root == null) {
-                    absolutePosition = relativePosition;
-                    absoluteRotation = relativeRotation;
-                } else {
+                if (Utilities.IsValid(root)) {
                     absolutePosition = root.TransformPoint(relativePosition);
                     absoluteRotation = root.rotation * relativeRotation;
-                    lastPosition = root.position;
-                    lastRotation = root.rotation;
+                    lastRootPosition = root.position;
+                    lastRootRotation = root.rotation;
+                } else {
+                    absolutePosition = relativePosition;
+                    absoluteRotation = relativeRotation;
                 }
-                if (customPositionHandler != null) {
+                if (Utilities.IsValid(customPositionHandler)) {
                     customPositionHandler.ageTarget = this;
                     customPositionHandler._OnDeserializePosition();
                 }
-                if (pickupState != 0) {
-                    absolutePosition = smoothPosition;
-                    switch ((VRCPlayerApi.TrackingDataType)pickupState) {
-                        case VRCPlayerApi.TrackingDataType.LeftHand:
-                            absolutePosition = playerAttachedAGE.LeftHandMatrix.MultiplyPoint3x4(absolutePosition);
-                        break;
-                        case VRCPlayerApi.TrackingDataType.RightHand:
-                            absolutePosition = playerAttachedAGE.RightHandMatrix.MultiplyPoint3x4(absolutePosition);
-                        break;
-                    }
-                }
+                if (pickupState != 0) absolutePosition = GetOnHandMatrix().MultiplyPoint3x4(smoothPosition);
                 transform.SetPositionAndRotation(absolutePosition, absoluteRotation);
-                if (rigidbody != null) {
+                if (Utilities.IsValid(rigidbody)) {
                     rigidbody.useGravity = false;
                     rigidbody.isKinematic = true;
                     rigidbody.position = absolutePosition;
                     rigidbody.rotation = absoluteRotation;
                 }
-                if (pickup != null) pickup.pickupable = pickupable && (pickupState == 0 || !pickup.DisallowTheft);
+                if (Utilities.IsValid(pickup)) pickup.pickupable = pickupable && (pickupState == 0 || !pickup.DisallowTheft);
+            }
+        }
+
+        Matrix4x4 GetOnHandMatrix() {
+            var owner = Networking.GetOwner(gameObject);
+            if (!Utilities.IsValid(playerAttachedAGE) || owner != ageOwner) {
+                playerAttachedAGE = manager.GetInstanceFromPlayer(owner);
+                ageOwner = owner;
+                if (!Utilities.IsValid(playerAttachedAGE)) return Matrix4x4.identity;
+            }
+            var pickupStateEnum = (VRCPlayerApi.TrackingDataType)(int)pickupState;
+            switch (pickupStateEnum) {
+                case VRCPlayerApi.TrackingDataType.LeftHand: return playerAttachedAGE.LeftHandMatrix;
+                case VRCPlayerApi.TrackingDataType.RightHand: return playerAttachedAGE.RightHandMatrix;
+                default: return Matrix4x4.identity;
             }
         }
 
         public override void OnPickup() {
             if (!localOnly && !Networking.IsOwner(gameObject)) {
-                if (pickupState != 0 && pickup != null && pickup.DisallowTheft) {
+                if (pickupState != 0 && Utilities.IsValid(pickup) && pickup.DisallowTheft) {
                     SendCustomEventDelayedFrames(nameof(_Drop), 0);
                     return;
                 }
@@ -178,12 +177,8 @@ namespace JLChnToZ.VRC.AGE {
         public void _UpdatePickupState() {
             if (localOnly || Networking.IsOwner(gameObject)) {
                 localPickupState = 0;
-                if (pickup != null) {
-                    if (pickup == localPlayer.GetPickupInHand(VRC_Pickup.PickupHand.Left))
-                        localPickupState = 1;
-                    else if (pickup == localPlayer.GetPickupInHand(VRC_Pickup.PickupHand.Right))
-                        localPickupState = 2;
-                }
+                if (Utilities.IsValid(pickup))
+                    localPickupState = pickup.IsHeld ? (byte)(int)pickup.currentHand : (byte)0;
                 if (!localOnly) {
                     pickupState = localPickupState;
                     if (isManualSync) RequestSerialization();
@@ -192,10 +187,10 @@ namespace JLChnToZ.VRC.AGE {
         }
 
         public override bool OnOwnershipRequest(VRCPlayerApi to, VRCPlayerApi from) =>
-            pickupState == 0 || pickup == null || !pickup.DisallowTheft;
+            pickupState == 0 || !Utilities.IsValid(pickup) || !pickup.DisallowTheft;
 
         public override void OnOwnershipTransferred(VRCPlayerApi player) {
-            if (!player.isLocal && pickupState != 0 && pickup != null) SendCustomEventDelayedFrames(nameof(_Drop), 0);
+            if (!player.isLocal && pickupState != 0 && Utilities.IsValid(pickup)) SendCustomEventDelayedFrames(nameof(_Drop), 0);
         }
 
         public void _Drop() => pickup.Drop();

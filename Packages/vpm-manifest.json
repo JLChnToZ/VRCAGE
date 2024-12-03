@@ -5,6 +5,9 @@
     },
     "com.vrchat.worlds": {
       "version": "3.5.0"
+    },
+    "idv.jlchntoz.vrcw-foundation": {
+      "version": "0.0.11"
     }
   },
   "locked": {
@@ -21,6 +24,12 @@
     "com.vrchat.base": {
       "version": "3.7.4",
       "dependencies": {}
+    },
+    "idv.jlchntoz.vrcw-foundation": {
+      "version": "0.0.11",
+      "dependencies": {
+        "com.vrchat.worlds": "3.x.x"
+      }
     }
   }
 }

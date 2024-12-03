@@ -214,12 +214,6 @@
         "com.unity.nuget.newtonsoft-json": "3.0.2"
       }
     },
-    "com.vrchat.demo-template": {
-      "version": "file:com.vrchat.demo-template",
-      "depth": 0,
-      "source": "embedded",
-      "dependencies": {}
-    },
     "com.vrchat.worlds": {
       "version": "file:com.vrchat.worlds",
       "depth": 0,
@@ -233,6 +227,12 @@
     },
     "idv.jlchntoz.vrcage": {
       "version": "file:idv.jlchntoz.vrcage",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
+    "idv.jlchntoz.vrcw-foundation": {
+      "version": "file:idv.jlchntoz.vrcw-foundation",
       "depth": 0,
       "source": "embedded",
       "dependencies": {}

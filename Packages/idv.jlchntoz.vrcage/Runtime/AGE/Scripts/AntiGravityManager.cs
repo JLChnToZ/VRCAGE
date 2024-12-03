@@ -1,10 +1,12 @@
 ﻿using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
+using JLChnToZ.VRC.Foundation;
+using VRC.SDK3.Data;
 
 namespace JLChnToZ.VRC.AGE {
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
-    public class AntiGravityManager : UdonSharpBehaviour {
+    public partial class AntiGravityManager : UdonSharpBehaviour {
         [SerializeField] Transform root;
         [SerializeField] bool autoReattach;
         [SerializeField] bool autoUseOnLogin;
@@ -19,15 +21,22 @@ namespace JLChnToZ.VRC.AGE {
         VRC_Pickup leftHandItem, rightHandItem;
         bool leftHandSupported, rightHandSupported;
         AntiGravityAutoSwitch leftHandSwitch, rightHandSwitch;
+        DataDictionary instanceMap;
 
         public Transform Root => root;
         public AntiGravityHandlerBase CustomPositionHandler => customPositionHandler;
         public AntiGravityEngine ActiveInstance => localInstance;
 
+        public AntiGravityEngine GetInstanceFromPlayer(VRCPlayerApi player) {
+            if (Utilities.IsValid(instanceMap) && instanceMap.TryGetValue(player.playerId, TokenType.Reference, out var instance))
+                return (AntiGravityEngine)instance.Reference;
+            return null;
+        }
+
         void Start() {
             if (init) return;
             init = true;
-            if (root == null) root = transform;
+            if (!Utilities.IsValid(root)) root = transform;
             localPlayer = Networking.LocalPlayer;
             template = GetComponentInChildren<AntiGravityEngine>(true);
         }
@@ -38,6 +47,8 @@ namespace JLChnToZ.VRC.AGE {
                 Debug.LogWarning("No AntiGravityEngine found in player objects.");
                 return;
             }
+            if (!Utilities.IsValid(instanceMap)) instanceMap = new DataDictionary();
+            instanceMap[player.playerId] = instance;
             instance.root = root;
             instance.autoReattach = autoReattach;
             instance.detachOnRespawn = detachOnRespawn;
@@ -97,7 +108,7 @@ namespace JLChnToZ.VRC.AGE {
         public bool Use() {
             Start();
             if (!Utilities.IsValid(localInstance)) return false;
-            if (localInstance.IsSeated) localInstance.Exit();
+            localInstance.Exit();
             if (localInstance.Use()) return true;
             return false;
         }
@@ -121,4 +132,10 @@ namespace JLChnToZ.VRC.AGE {
             localInstance.Exit();
         }
     }
+
+#if !COMPILER_UDONSHARP
+    public partial class AntiGravityManager : ISingleton<AntiGravityManager> {
+        void ISingleton<AntiGravityManager>.Merge(AntiGravityManager[] others) { }
+    }
+#endif
 }

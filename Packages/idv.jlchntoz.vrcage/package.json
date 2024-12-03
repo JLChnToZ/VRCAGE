@@ -5,7 +5,8 @@
   "description": "This is an advanced player/pickupable gimmicks physics system for VRChat worlds.",
   "gitDependencies": {},
   "vpmDependencies": {
-    "com.vrchat.worlds": "3.7.4"
+    "com.vrchat.worlds": "3.7.4",
+    "idv.jlchntoz.vrcw-foundation": "0.x.x"
   },
   "legacyFolders": {},
   "legacyFiles": {},

@@ -1,9 +1,13 @@
 {
     "name": "idv.jlchntoz.vrcage",
     "references": [
-        "VRC.SDK3",
         "VRC.SDKBase",
-        "UdonSharp.Runtime"
+        "VRC.SDK3",
+        "VRC.Udon",
+        "VRC.Udon.Serialization.OdinSerializer",
+        "UdonSharp.Runtime",
+        "UdonSharp.Editor",
+        "JLChnToZ.VRC.Foundation"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
