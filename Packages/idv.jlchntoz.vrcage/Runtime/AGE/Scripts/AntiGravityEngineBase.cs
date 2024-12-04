@@ -15,10 +15,10 @@ namespace JLChnToZ.VRC.AGE {
         [NonSerialized] public Quaternion absoluteRotation;
         [NonSerialized] public Vector3 relativePosition;
         [NonSerialized] public Quaternion relativeRotation;
-        [UdonSynced] protected Vector3 position;
+        [UdonSynced(UdonSyncMode.Smooth)] protected Vector3 position;
         [UdonSynced] protected int rotationBits;
 
-#region Quaternion Encode Decoder
+        #region Quaternion Encode Decoder
         const int xBits = 10, yBits = 10, zBits = 10;
         const int shiftX = 0;
         const int shiftY = shiftX + xBits;
@@ -32,7 +32,7 @@ namespace JLChnToZ.VRC.AGE {
         const float scaleZ = (maskZ + 1) / 2 - 1;
 
         // Pack a quaternion into an integer.
-        protected int PackQuaternion(Quaternion q) {  
+        protected int PackQuaternion(Quaternion q) {
             int x = Mathf.RoundToInt((q.x + 1) * scaleX);
             int y = Mathf.RoundToInt((q.y + 1) * scaleY);
             int z = Mathf.RoundToInt((q.z + 1) * scaleZ);
@@ -47,14 +47,16 @@ namespace JLChnToZ.VRC.AGE {
             float z = ((bits >> shiftZ) & maskZ) / scaleZ - 1;
             var v = new Vector3(x, y, z);
             float w = Vector3.Dot(v, v);
-            if (w > 1) {
+            if (w > 1)
+            {
                 v *= 1 / Mathf.Sqrt(w);
                 w = 0;
-            } else
+            }
+            else
                 w = Mathf.Sqrt(1 - w) * Mathf.Sign(bits);
             return new Quaternion(v.x, v.y, v.z, w).normalized;
         }
-#endregion
+        #endregion
     }
 
 #if UNITY_EDITOR && !COMPILER_UDONSHARP

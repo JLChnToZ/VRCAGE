@@ -40,6 +40,10 @@ namespace JLChnToZ.VRC.AGE {
 
         public Matrix4x4 RightHandMatrix => Matrix4x4.TRS(rightHandPosition, rightHandRotation, Vector3.one) * baseMatrix;
 
+        public Quaternion LeftHandRotation => leftHandRotation;
+
+        public Quaternion RightHandRotation => rightHandRotation;
+
         void Start() {
             station = (VRCStation)GetComponent(typeof(VRCStation));
             owner = Networking.GetOwner(gameObject);
