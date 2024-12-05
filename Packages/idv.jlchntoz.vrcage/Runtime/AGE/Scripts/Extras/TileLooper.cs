@@ -5,7 +5,7 @@ using VRC.SDKBase;
 
 namespace JLChnToZ.VRC.AGE.Extras {
     [UdonBehaviourSyncMode(BehaviourSyncMode.NoVariableSync)]
-    public class TileLooper : AntiGravityHandlerBase {
+    public class TileLooper : AntiGravityHandler {
         [SerializeField] Transform[] sceneObjects;
         [SerializeField] Vector3 repeat;
         [SerializeField] float lookAtCenterDistance;
@@ -122,12 +122,12 @@ namespace JLChnToZ.VRC.AGE.Extras {
 
         public override void _OnDeserializePosition() {
             var playerPos = PlayerPos;
-            var pos = RelativePosition;
+            var pos = relativePosition;
             if (repeat.x > 0) pos.x = GetRelativePos(playerPos.x, pos.x, repeat.x);
             if (repeat.y > 0) pos.y = GetRelativePos(playerPos.y, pos.y, repeat.y);
             if (repeat.z > 0) pos.z = GetRelativePos(playerPos.z, pos.z, repeat.z);
             var root = (Transform)ageTarget.GetProgramVariable("root");
-            AbsolutePosition = root.TransformPoint(pos);
+            absolutePosition = root.TransformPoint(pos);
         }
 
         void ClampLocalPlayer() {

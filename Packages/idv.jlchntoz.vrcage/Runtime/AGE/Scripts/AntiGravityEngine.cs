@@ -4,8 +4,12 @@ using UnityEngine;
 using VRC.SDKBase;
 
 namespace JLChnToZ.VRC.AGE {
+    /// <summary>
+    /// The component handles the player's position and rotation in the world.
+    /// </summary>
     [RequireComponent(typeof(global::VRC.SDK3.Components.VRCStation))]
     [RequireComponent(typeof(global::VRC.SDK3.Components.VRCPlayerObject))]
+    [AddComponentMenu("/Anti Gravity Engine/Anti Gravity Engine")]
     public class AntiGravityEngine : AntiGravityEngineBase {
         [NonSerialized] public bool autoReattach;
         [NonSerialized] public bool detachOnRespawn;
@@ -36,37 +40,33 @@ namespace JLChnToZ.VRC.AGE {
             }
         }
 
-        public Matrix4x4 LeftHandMatrix => Matrix4x4.TRS(leftHandPosition, leftHandRotation, Vector3.one) * baseMatrix;
+        public Matrix4x4 LeftHandMatrix => baseMatrix * Matrix4x4.TRS(leftHandPosition, leftHandRotation, Vector3.one);
 
-        public Matrix4x4 RightHandMatrix => Matrix4x4.TRS(rightHandPosition, rightHandRotation, Vector3.one) * baseMatrix;
+        public Matrix4x4 RightHandMatrix => baseMatrix * Matrix4x4.TRS(rightHandPosition, rightHandRotation, Vector3.one);
 
-        public Quaternion LeftHandRotation => leftHandRotation;
+        public Quaternion LeftHandRotation => owner.GetRotation() * leftHandRotation;
 
-        public Quaternion RightHandRotation => rightHandRotation;
+        public Quaternion RightHandRotation => owner.GetRotation() * rightHandRotation;
 
         void Start() {
             station = (VRCStation)GetComponent(typeof(VRCStation));
             owner = Networking.GetOwner(gameObject);
-            if (!Utilities.IsValid(root)) {
-                root = transform.parent;
-                if (!Utilities.IsValid(root)) root = transform;
-            }
             anchor = transform;
-            SendCustomEventDelayedFrames(nameof(_CheckParent), 2);
         }
 
         void FixedUpdate() {
-            if (Networking.IsOwner(gameObject)) {
-                var newPosition = owner.GetPosition();
-                var newRotation = owner.GetRotation();
-                bool positionChanged = newPosition != lastPosition || newRotation != lastRotation;
+            if (!Utilities.IsValid(positionHandler)) return;
+            var ownerPosition = owner.GetPosition();
+            var ownerRotation = owner.GetRotation();
+            bool isVR = owner.IsUserInVR();
+            if (owner.isLocal) {
+                bool positionChanged = ownerPosition != lastPosition || ownerRotation != lastRotation;
                 if (positionChanged) {
-                    lastPosition = newPosition;
-                    lastRotation = newRotation;
-                    baseMatrix = Matrix4x4.TRS(newPosition, newRotation, Vector3.one);
+                    lastPosition = ownerPosition;
+                    lastRotation = ownerRotation;
+                    baseMatrix = Matrix4x4.TRS(ownerPosition, ownerRotation, Vector3.one);
                 }
                 bool leftHandUpdated, rightHandUpdated;
-                bool isVR = owner.IsUserInVR();
                 leftHandUpdated = isVR && UpdateHandPosition(
                     VRCPlayerApi.TrackingDataType.LeftHand,
                     ref leftHandPosition,
@@ -81,24 +81,21 @@ namespace JLChnToZ.VRC.AGE {
                     ref rightHandRotation,
                     ref rightHandRotationBits
                 );
+                if (!isVR) {
+                    leftHandPosition = rightHandPosition;
+                    leftHandRotation = rightHandRotation;
+                }
                 if (isManualSync && (positionChanged || leftHandUpdated || rightHandUpdated))
                     RequestSerialization();
             } else {
                 var t = Time.deltaTime * lerpScale;
-                smoothPosition = Vector3.Lerp(smoothPosition, position, t);
-                smoothRotation = Quaternion.Slerp(smoothRotation, UnpackRotation(rotationBits), t);
-                relativePosition = smoothPosition;
-                relativeRotation = smoothRotation;
-                absolutePosition = root.TransformPoint(relativePosition);
-                absoluteRotation = root.rotation * relativeRotation;
-                if (Utilities.IsValid(customPositionHandler)) {
-                    customPositionHandler.ageTarget = this;
-                    customPositionHandler._OnDeserializePosition();
-                }
-                anchor.SetPositionAndRotation(absolutePosition, absoluteRotation);
-                baseMatrix = Matrix4x4.TRS(absolutePosition, absoluteRotation, Vector3.one);
-                if (owner.IsUserInVR()) leftHandRotation = UnpackRotation(leftHandRotationBits);
+                var newPosition = smoothPosition = Vector3.Lerp(smoothPosition, position, t);
+                var newRotation = smoothRotation = Quaternion.Slerp(smoothRotation, UnpackRotation(rotationBits), t);
+                DeserializePosition(ref newPosition, ref newRotation);
+                anchor.SetPositionAndRotation(newPosition, newRotation);
+                baseMatrix = anchor.localToWorldMatrix;
                 rightHandRotation = UnpackRotation(rightHandRotationBits);
+                leftHandRotation = isVR ? UnpackRotation(leftHandRotationBits) : rightHandRotation;
             }
         }
 
@@ -112,20 +109,6 @@ namespace JLChnToZ.VRC.AGE {
             rotation = newRotation;
             rotationBits = PackQuaternion(rotation);
             return true;
-        }
-
-        void UpdatePlayerPosition() {
-            absolutePosition = owner.GetPosition();
-            absoluteRotation = owner.GetRotation();
-            relativePosition = root.InverseTransformPoint(absolutePosition);
-            relativeRotation = Quaternion.Inverse(root.rotation) * absoluteRotation;
-            if (Utilities.IsValid(customPositionHandler)) {
-                customPositionHandler.ageTarget = this;
-                customPositionHandler._OnSerializePosition();
-            }
-            smoothPosition = position = relativePosition;
-            smoothRotation = relativeRotation;
-            rotationBits = PackQuaternion(relativeRotation);
         }
 
         void UpdateAnchorPosition() => anchor.SetPositionAndRotation(
@@ -150,11 +133,7 @@ namespace JLChnToZ.VRC.AGE {
 
         public bool UseAt(Vector3 position, Quaternion rotation) {
             if (Networking.IsOwner(gameObject)) {
-                if (rotation != Quaternion.identity) {
-                    var euler = rotation.eulerAngles;
-                    root.rotation = Quaternion.Inverse(Quaternion.Euler(euler.x, 0, euler.z)) * root.rotation;
-                    anchor.SetPositionAndRotation(position, Quaternion.Euler(0, euler.y, 0));
-                } else anchor.position = position;
+                anchor.SetPositionAndRotation(position, rotation);
                 owner.TeleportTo(position, rotation);
                 if (isManualSync) RequestSerialization();
                 _UncheckedUse();
@@ -198,13 +177,14 @@ namespace JLChnToZ.VRC.AGE {
             _UncheckedUse();
         }
 
-        public void _CheckParent() {
-            if (anchor.IsChildOf(root)) // Prevent side effects
-                anchor.SetParent(null);
-        }
-
         public override void OnPreSerialization() {
-            if (Networking.IsOwner(gameObject)) UpdatePlayerPosition();
+            var newPosition = owner.GetPosition();
+            var newRotation = owner.GetRotation();
+            if (SerializePosition(ref newPosition, ref newRotation)) {
+                smoothPosition = position = newPosition;
+                smoothRotation = newRotation;
+                rotationBits = PackQuaternion(smoothRotation);
+            }
         }
 
         public override void OnStationEntered(VRCPlayerApi player) {

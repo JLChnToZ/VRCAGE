@@ -4,7 +4,7 @@ using VRC.SDKBase;
 
 namespace JLChnToZ.VRC.AGE.Extras {
     [UdonBehaviourSyncMode(BehaviourSyncMode.NoVariableSync)]
-    public class SphericalGroundHandler : UdonSharpBehaviour {
+    public class SphericalGroundHandler : AntiGravityHandler {
         [SerializeField] float height;
         [SerializeField] Transform idlePos;
         VRCPlayerApi localPlayer;

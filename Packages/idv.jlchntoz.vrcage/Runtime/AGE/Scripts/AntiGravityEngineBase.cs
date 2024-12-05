@@ -1,22 +1,48 @@
 using System;
 using UnityEngine;
 using UdonSharp;
+using VRC.SDKBase;
+
 #if UNITY_EDITOR && !COMPILER_UDONSHARP
 using JLChnToZ.VRC.Foundation;
 using UdonSharpEditor;
 #endif
 
 namespace JLChnToZ.VRC.AGE {
+    /// <summary>The base class for Anti Gravity Engine components.</summary>
     public abstract partial class AntiGravityEngineBase : UdonSharpBehaviour {
-        [SerializeField, HideInInspector] protected bool isManualSync;
-        public Transform root;
-        [NonSerialized] public AntiGravityHandlerBase customPositionHandler;
-        [NonSerialized] public Vector3 absolutePosition;
-        [NonSerialized] public Quaternion absoluteRotation;
-        [NonSerialized] public Vector3 relativePosition;
-        [NonSerialized] public Quaternion relativeRotation;
+        [SerializeField, HideInInspector] protected AntiGravityManager manager;
+        [SerializeField, HideInInspector] internal bool isManualSync;
+        [NonSerialized] internal protected AntiGravityHandler positionHandler;
+        [UdonSynced] internal byte selectedHandler;
         [UdonSynced(UdonSyncMode.Smooth)] protected Vector3 position;
         [UdonSynced] protected int rotationBits;
+
+        public override void OnDeserialization() {
+            positionHandler = selectedHandler > 0 ? manager.GetHandlerOf(selectedHandler - 1) : null;
+        }
+
+        protected bool SerializePosition(ref Vector3 position, ref Quaternion rotation) {
+            if (!Utilities.IsValid(positionHandler)) return false;
+            positionHandler.absolutePosition = position;
+            positionHandler.absoluteRotation = rotation;
+            positionHandler.ageTarget = this;
+            positionHandler._OnSerializePosition();
+            position = positionHandler.relativePosition;
+            rotation = positionHandler.relativeRotation;
+            return true;
+        }
+
+        protected bool DeserializePosition(ref Vector3 position, ref Quaternion rotation) {
+            if (!Utilities.IsValid(positionHandler)) return false;
+            positionHandler.relativePosition = position;
+            positionHandler.relativeRotation = rotation;
+            positionHandler.ageTarget = this;
+            positionHandler._OnDeserializePosition();
+            position = positionHandler.absolutePosition;
+            rotation = positionHandler.absoluteRotation;
+            return true;
+        }
 
         #region Quaternion Encode Decoder
         const int xBits = 10, yBits = 10, zBits = 10;
@@ -31,7 +57,11 @@ namespace JLChnToZ.VRC.AGE {
         const float scaleY = (maskY + 1) / 2 - 1;
         const float scaleZ = (maskZ + 1) / 2 - 1;
 
-        // Pack a quaternion into an integer.
+        /// <summary>
+        /// Pack a quaternion into an integer.
+        /// </summary>
+        /// <param name="q"></param>
+        /// <returns></returns>
         protected int PackQuaternion(Quaternion q) {
             int x = Mathf.RoundToInt((q.x + 1) * scaleX);
             int y = Mathf.RoundToInt((q.y + 1) * scaleY);
@@ -40,7 +70,11 @@ namespace JLChnToZ.VRC.AGE {
             return (x << shiftX) | (y << shiftY) | (z << shiftZ) | w;
         }
 
-        // Unpack a quaternion from an integer.
+        /// <summary>
+        /// Unpack a quaternion from an integer.
+        /// </summary>
+        /// <param name="bits"></param>
+        /// <returns></returns>
         protected Quaternion UnpackRotation(int bits) {
             float x = ((bits >> shiftX) & maskX) / scaleX - 1;
             float y = ((bits >> shiftY) & maskY) / scaleY - 1;

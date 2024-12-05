@@ -9,7 +9,6 @@ This system can't be used standalone and it requires some UDON scripting to make
 To install this package, you should use [VRChat Creator Companion](https://vcc.docs.vrchat.com/). Step by step details TBD.
 
 There are 2 demo scenes, you may refer them to start build your own world.
-There is also a template file named `AntiGravityCustomHandlerTemplate.cs`, you can use it as a "clean" template to implement custom physics logic.
 
 ## But... Wait! I want to see it in action!
 

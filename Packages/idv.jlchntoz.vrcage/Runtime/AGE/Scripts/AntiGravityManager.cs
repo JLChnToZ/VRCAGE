@@ -5,26 +5,22 @@ using JLChnToZ.VRC.Foundation;
 using VRC.SDK3.Data;
 
 namespace JLChnToZ.VRC.AGE {
+    /// <summary>The manager of Anti Gravity Engine.</summary>
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
+    [AddComponentMenu("/Anti Gravity Engine/Anti Gravity Manager")]
     public partial class AntiGravityManager : UdonSharpBehaviour {
-        [SerializeField] Transform root;
+        [SerializeField] AntiGravityHandler[] handlers;
+        [SerializeField] int initialSelectedHandler;
         [SerializeField] bool autoReattach;
         [SerializeField] bool autoUseOnLogin;
         [SerializeField] bool detachOnRespawn;
-        [SerializeField] bool checkPickups;
-        [SerializeField] bool dropUnsupportedPickups;
-        [SerializeField] AntiGravityHandlerBase customPositionHandler;
         bool init;
         VRCPlayerApi localPlayer;
         AntiGravityEngine template;
         AntiGravityEngine localInstance;
-        VRC_Pickup leftHandItem, rightHandItem;
-        bool leftHandSupported, rightHandSupported;
-        AntiGravityAutoSwitch leftHandSwitch, rightHandSwitch;
         DataDictionary instanceMap;
 
-        public Transform Root => root;
-        public AntiGravityHandlerBase CustomPositionHandler => customPositionHandler;
+        public AntiGravityHandler CustomPositionHandler => null;
         public AntiGravityEngine ActiveInstance => localInstance;
 
         public AntiGravityEngine GetInstanceFromPlayer(VRCPlayerApi player) {
@@ -33,10 +29,14 @@ namespace JLChnToZ.VRC.AGE {
             return null;
         }
 
+        public AntiGravityHandler GetHandlerOf(int index) {
+            if (index < 0 || index >= handlers.Length) return null;
+            return handlers[index];
+        }
+
         void Start() {
             if (init) return;
             init = true;
-            if (!Utilities.IsValid(root)) root = transform;
             localPlayer = Networking.LocalPlayer;
             template = GetComponentInChildren<AntiGravityEngine>(true);
         }
@@ -49,72 +49,44 @@ namespace JLChnToZ.VRC.AGE {
             }
             if (!Utilities.IsValid(instanceMap)) instanceMap = new DataDictionary();
             instanceMap[player.playerId] = instance;
-            instance.root = root;
             instance.autoReattach = autoReattach;
             instance.detachOnRespawn = detachOnRespawn;
-            instance.customPositionHandler = customPositionHandler;
             if (!player.isLocal) return;
             localInstance = instance;
             if (autoUseOnLogin) SendCustomEventDelayedSeconds(nameof(Use), 3F);
-        }
-
-        void Uptate() {
-            if (checkPickups) CheckPickups();
-        }
-
-        void CheckPickups() {
-            AntiGravityAutoSwitch handSwitch;
-            var handItem = localPlayer.GetPickupInHand(VRC_Pickup.PickupHand.Left);
-            if (handItem != leftHandItem) {
-                if (Utilities.IsValid(handItem)) {
-                    handSwitch = handItem.GetComponent<AntiGravityAutoSwitch>();
-                    leftHandSupported = Utilities.IsValid(handItem.GetComponent<AntiGravityObjectSync>());
-                } else {
-                    handSwitch = null;
-                    leftHandSupported = true;
-                }
-                leftHandItem = handItem;
-            } else
-                handSwitch = leftHandSwitch;
-            if (handSwitch != leftHandSwitch) {
-                if (Utilities.IsValid(leftHandSwitch) && leftHandSwitch.ActiveManager == this)
-                    leftHandSwitch.ActiveManager = null;
-                leftHandSwitch = handSwitch;
-            }
-            if (Utilities.IsValid(handSwitch)) handSwitch.ActiveManager = this;
-            else if (dropUnsupportedPickups && !leftHandSupported) handItem.Drop();
-
-            handItem = localPlayer.GetPickupInHand(VRC_Pickup.PickupHand.Right);
-            if (handItem != rightHandItem) {
-                if (Utilities.IsValid(handItem)) {
-                    handSwitch = handItem.GetComponent<AntiGravityAutoSwitch>();
-                    rightHandSupported = Utilities.IsValid(handItem.GetComponent<AntiGravityObjectSync>());
-                } else {
-                    handSwitch = null;
-                    rightHandSupported = true;
-                }
-                rightHandItem = handItem;
-            } else
-                handSwitch = rightHandSwitch;
-            if (handSwitch != rightHandSwitch) {
-                if (Utilities.IsValid(rightHandSwitch) && rightHandSwitch.ActiveManager == this)
-                    rightHandSwitch.ActiveManager = null;
-                rightHandSwitch = handSwitch;
-            }
-            if (Utilities.IsValid(handSwitch)) handSwitch.ActiveManager = this;
-            else if (dropUnsupportedPickups && !rightHandSupported) handItem.Drop();
         }
 
         public bool Use() {
             Start();
             if (!Utilities.IsValid(localInstance)) return false;
             localInstance.Exit();
+            if (localInstance.selectedHandler == 0) SelectHandlerForLocal(initialSelectedHandler);
+            if (localInstance.Use()) return true;
+            return false;
+            
+        }
+
+        public bool Use(int handlerIndex) {
+            Start();
+            if (!Utilities.IsValid(localInstance)) return false;
+            localInstance.Exit();
+            SelectHandlerForLocal(handlerIndex);
             if (localInstance.Use()) return true;
             return false;
         }
 
         public bool UseAt(Vector3 position, Quaternion rotation) {
             Start();
+            if (!Utilities.IsValid(localInstance)) return false;
+            if (localInstance.selectedHandler == 0) SelectHandlerForLocal(initialSelectedHandler);
+            localInstance.UseAt(position, rotation);
+            return true;
+        }
+
+        public bool UseAt(int handlerIndex, Vector3 position, Quaternion rotation) {
+            Start();
+            if (!Utilities.IsValid(localInstance)) return false;
+            SelectHandlerForLocal(handlerIndex);
             localInstance.UseAt(position, rotation);
             return true;
         }
@@ -130,6 +102,13 @@ namespace JLChnToZ.VRC.AGE {
         public void Exit() {
             Start();
             localInstance.Exit();
+        }
+
+        void SelectHandlerForLocal(int index) {
+            if (!Utilities.IsValid(localInstance)) return;
+            localInstance.selectedHandler = (byte)(index + 1);
+            localInstance.positionHandler = GetHandlerOf(index);
+            if (localInstance.isManualSync) localInstance.RequestSerialization();
         }
     }
 
