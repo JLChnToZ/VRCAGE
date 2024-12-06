@@ -117,17 +117,16 @@ namespace JLChnToZ.VRC.AGE.Extras {
         }
 
         public override void _OnSerializePosition() {
+            base._OnSerializePosition();
             isTrackingPlayer = true;
         }
 
         public override void _OnDeserializePosition() {
             var playerPos = PlayerPos;
-            var pos = relativePosition;
-            if (repeat.x > 0) pos.x = GetRelativePos(playerPos.x, pos.x, repeat.x);
-            if (repeat.y > 0) pos.y = GetRelativePos(playerPos.y, pos.y, repeat.y);
-            if (repeat.z > 0) pos.z = GetRelativePos(playerPos.z, pos.z, repeat.z);
-            var root = (Transform)ageTarget.GetProgramVariable("root");
-            absolutePosition = root.TransformPoint(pos);
+            if (repeat.x > 0) relativePosition.x = GetRelativePos(playerPos.x, relativePosition.x, repeat.x);
+            if (repeat.y > 0) relativePosition.y = GetRelativePos(playerPos.y, relativePosition.y, repeat.y);
+            if (repeat.z > 0) relativePosition.z = GetRelativePos(playerPos.z, relativePosition.z, repeat.z);
+            base._OnDeserializePosition();
         }
 
         void ClampLocalPlayer() {
