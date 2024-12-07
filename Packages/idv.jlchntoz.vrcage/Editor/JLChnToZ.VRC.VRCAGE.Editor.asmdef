@@ -1,11 +1,14 @@
 {
-  "name": "idv.jlchntoz.vrcage.Editor",
+  "name": "JLChnToZ.VRC.VRCAGE.Editor",
   "references": [
     "VRC.SDK3",
     "VRC.SDK3.Editor",
     "VRC.SDKBase",
     "VRC.SDKBase.Editor",
-    "idv.jlchntoz.vrcage"
+    "UdonSharp.Runtime",
+    "UdonSharp.Editor",
+    "JLChnToZ.VRC.Foundation",
+    "JLChnToZ.VRC.VRCAGE"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

@@ -9,7 +9,7 @@ namespace JLChnToZ.VRC.AGE {
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
     [AddComponentMenu("/Anti Gravity Engine/Anti Gravity Manager")]
     public partial class AntiGravityManager : UdonSharpBehaviour {
-        [SerializeField] AntiGravityHandler[] handlers;
+        [SerializeField] internal AntiGravityHandler[] handlers;
         [SerializeField] int initialSelectedHandler;
         [SerializeField] bool autoReattach;
         [SerializeField] bool autoUseOnLogin;
@@ -19,9 +19,6 @@ namespace JLChnToZ.VRC.AGE {
         AntiGravityEngine template;
         AntiGravityEngine localInstance;
         DataDictionary instanceMap;
-
-        public AntiGravityHandler CustomPositionHandler => null;
-        public AntiGravityEngine ActiveInstance => localInstance;
 
         public AntiGravityEngine GetInstanceFromPlayer(VRCPlayerApi player) {
             if (Utilities.IsValid(instanceMap) && instanceMap.TryGetValue(player.playerId, TokenType.Reference, out var instance))

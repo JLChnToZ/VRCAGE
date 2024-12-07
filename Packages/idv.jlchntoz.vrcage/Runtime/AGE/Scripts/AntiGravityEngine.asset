@@ -62,7 +62,7 @@ MonoBehaviour:
       Data: 3|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: JLChnToZ.VRC.AGE.AntiGravityManager, idv.jlchntoz.vrcage
+      Data: JLChnToZ.VRC.AGE.AntiGravityManager, JLChnToZ.VRC.VRCAGE
     - Name: 
       Entry: 8
       Data: 
@@ -200,7 +200,7 @@ MonoBehaviour:
       Data: 14|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: JLChnToZ.VRC.AGE.AntiGravityHandler, idv.jlchntoz.vrcage
+      Data: JLChnToZ.VRC.AGE.AntiGravityHandler, JLChnToZ.VRC.VRCAGE
     - Name: 
       Entry: 8
       Data: 

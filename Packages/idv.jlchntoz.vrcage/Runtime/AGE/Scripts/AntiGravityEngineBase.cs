@@ -81,12 +81,10 @@ namespace JLChnToZ.VRC.AGE {
             float z = ((bits >> shiftZ) & maskZ) / scaleZ - 1;
             var v = new Vector3(x, y, z);
             float w = Vector3.Dot(v, v);
-            if (w > 1)
-            {
+            if (w > 1) {
                 v *= 1 / Mathf.Sqrt(w);
                 w = 0;
-            }
-            else
+            } else
                 w = Mathf.Sqrt(1 - w) * Mathf.Sign(bits);
             return new Quaternion(v.x, v.y, v.z, w).normalized;
         }
