@@ -8,6 +8,7 @@
     "UdonSharp.Runtime",
     "UdonSharp.Editor",
     "JLChnToZ.VRC.Foundation",
+    "JLChnToZ.VRC.Foundation.Editor",
     "JLChnToZ.VRC.VRCAGE"
   ],
   "includePlatforms": [],
