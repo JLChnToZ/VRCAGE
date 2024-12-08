@@ -1,7 +1,7 @@
 {
   "name": "idv.jlchntoz.vrcage",
   "displayName": "Anti Gravity Engine for VRChat",
-  "version": "0.2.0-beta.1",
+  "version": "0.2.0",
   "description": "This is an advanced player/pickupable gimmicks physics system for VRChat worlds.",
   "gitDependencies": {},
   "vpmDependencies": {
