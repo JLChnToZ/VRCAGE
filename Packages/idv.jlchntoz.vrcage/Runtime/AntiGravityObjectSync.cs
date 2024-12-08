@@ -14,8 +14,13 @@ namespace JLChnToZ.VRC.AGE {
         [SerializeField] int initialSelectedHandler = -1;
         /// <summary>If <see langword="true"/>, the object will be pickupable.</summary>
         public bool pickupable = true;
-        /// <summary>The lerp scale of the object.</summary>
-        [NonSerialized] public float lerpScale = 10;
+        [NonSerialized]
+        #if COMPILER_UDONSHARP
+        public
+        #else
+        internal
+        #endif
+        float lerpScale = 10;
         AntiGravityEngine playerAttachedAGE;
         VRCPlayerApi ageOwner;
         [UdonSynced] byte hand;
@@ -165,7 +170,10 @@ namespace JLChnToZ.VRC.AGE {
                 SendCustomEventDelayedFrames(nameof(_UpdatePickupState), 0);
         }
 
-        public void _UpdatePickupState() {
+        #if COMPILER_UDONSHARP
+        public
+        #endif
+        void _UpdatePickupState() {
             if (localOnly || Networking.IsOwner(gameObject))
                 Hand = Utilities.IsValid(pickup) && pickup.IsHeld ?
                     pickup.currentHand : VRC_Pickup.PickupHand.None;
@@ -192,6 +200,9 @@ namespace JLChnToZ.VRC.AGE {
             }
         }
 
-        public void _Drop() => pickup.Drop();
+        #if COMPILER_UDONSHARP
+        public
+        #endif
+        void _Drop() => pickup.Drop();
     }
 }

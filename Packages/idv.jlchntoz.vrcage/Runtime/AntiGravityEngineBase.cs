@@ -12,16 +12,24 @@ namespace JLChnToZ.VRC.AGE {
     /// <summary>The base class for Anti Gravity Engine components.</summary>
     public abstract partial class AntiGravityEngineBase : UdonSharpBehaviour {
         [SerializeField, HideInInspector] protected AntiGravityManager manager;
+        /// <summary>Is current sync mode is manual?</summary>
         [SerializeField, HideInInspector] internal bool isManualSync;
+        /// <summary>The handler of the position and rotation.</summary>
         [NonSerialized] internal protected AntiGravityHandler positionHandler;
         [UdonSynced] internal byte selectedHandler;
+        /// <summary>The position of the object.</summary>
         [UdonSynced(UdonSyncMode.Smooth)] protected Vector3 position;
+        /// <summary>The rotation of the object.</summary>
+        /// <remarks>This value is packed, use <see cref="UnpackRotation"/> and <see cref="PackQuaternion"/> to convert.</remarks>
         [UdonSynced] protected int rotationBits;
 
         public override void OnDeserialization() {
             positionHandler = selectedHandler > 0 ? manager.GetHandlerOf(selectedHandler - 1) : null;
         }
 
+        /// <summary>Serilize the position and rotation with selected handler.</summary>
+        /// <param name="position">The position to serialize. The value will be converted from absolute to relative.</param>
+        /// <param name="rotation">The rotation to serialize. The value will be converted from absolute to relative.</param>
         protected bool SerializePosition(ref Vector3 position, ref Quaternion rotation) {
             if (!Utilities.IsValid(positionHandler)) return false;
             positionHandler.absolutePosition = position;
@@ -33,6 +41,9 @@ namespace JLChnToZ.VRC.AGE {
             return true;
         }
 
+        /// <summary>Deserialize the position and rotation with selected handler.</summary>
+        /// <param name="position">The position to deserialize. The value will be converted from relative to absolute.</param>
+        /// <param name="rotation">The rotation to deserialize. The value will be converted from relative to absolute.</param>
         protected bool DeserializePosition(ref Vector3 position, ref Quaternion rotation) {
             if (!Utilities.IsValid(positionHandler)) return false;
             positionHandler.relativePosition = position;

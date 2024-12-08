@@ -1,6 +1,7 @@
 ﻿using System;
 using UdonSharp;
 using UnityEngine;
+using UnityEngine.UIElements;
 using VRC.SDKBase;
 
 namespace JLChnToZ.VRC.AGE {
@@ -11,9 +12,20 @@ namespace JLChnToZ.VRC.AGE {
     [RequireComponent(typeof(global::VRC.SDK3.Components.VRCPlayerObject))]
     [AddComponentMenu("/Anti Gravity Engine/Anti Gravity Engine")]
     public class AntiGravityEngine : AntiGravityEngineBase {
-        [NonSerialized] public bool autoReattach;
-        [NonSerialized] public bool detachOnRespawn;
-        [NonSerialized] public float lerpScale = 10;
+        [NonSerialized]
+        #if COMPILER_UDONSHARP
+        public
+        #else
+        internal
+        #endif
+        bool autoReattach, detachOnRespawn;
+        [NonSerialized]
+        #if COMPILER_UDONSHARP
+        public
+        #else
+        internal
+        #endif
+        float lerpScale = 10;
         [UdonSynced] Vector3 leftHandPosition, rightHandPosition;
         [UdonSynced] int leftHandRotationBits, rightHandRotationBits;
         Transform anchor;
@@ -29,6 +41,7 @@ namespace JLChnToZ.VRC.AGE {
         Quaternion leftHandRotation, rightHandRotation;
         Matrix4x4 baseMatrix = Matrix4x4.identity;
 
+        /// <summary>Can the player moves freely?</summary>
         public bool Mobility {
             get => mobility;
             set {
@@ -40,12 +53,22 @@ namespace JLChnToZ.VRC.AGE {
             }
         }
 
+        /// <summary>The local to world matrix of the left hand.</summary>
         public Matrix4x4 LeftHandMatrix => baseMatrix * Matrix4x4.TRS(leftHandPosition, leftHandRotation, Vector3.one);
 
+        /// <summary>The local to world matrix of the right hand.</summary>
         public Matrix4x4 RightHandMatrix => baseMatrix * Matrix4x4.TRS(rightHandPosition, rightHandRotation, Vector3.one);
 
+        /// <summary>The position of the left hand in world space.</summary>
+        public Vector3 LeftHandPosition => baseMatrix.MultiplyPoint3x4(leftHandPosition);
+
+        /// <summary>The position of the right hand in world space.</summary>
+        public Vector3 RightHandPosition => baseMatrix.MultiplyPoint3x4(rightHandPosition);
+
+        /// <summary>The rotation of the left hand in world space.</summary>
         public Quaternion LeftHandRotation => owner.GetRotation() * leftHandRotation;
 
+        /// <summary>The rotation of the right hand in world space.</summary>
         public Quaternion RightHandRotation => owner.GetRotation() * rightHandRotation;
 
         void Start() {
@@ -116,50 +139,77 @@ namespace JLChnToZ.VRC.AGE {
             owner.GetRotation()
         );
 
-        public void _UpdateMobility() =>
+        #if COMPILER_UDONSHARP
+        public
+        #endif
+        void _UpdateMobility() =>
             station.PlayerMobility = mobility ?
                 VRCStation.Mobility.Mobile :
                 VRCStation.Mobility.Immobilize;
 
-        public bool Use() {
+        #if COMPILER_UDONSHARP
+        public
+        #else
+        internal
+        #endif
+        bool _Use() {
             if (Networking.IsOwner(gameObject)) {
                 UpdateAnchorPosition();
                 if (isManualSync) RequestSerialization();
-                _UncheckedUse();
+                UncheckedUse();
                 return true;
             }
             return false;
         }
 
-        public bool UseAt(Vector3 position, Quaternion rotation) {
+        
+        #if COMPILER_UDONSHARP
+        public
+        #else
+        internal
+        #endif
+        bool UseAt(Vector3 position, Quaternion rotation) {
             if (Networking.IsOwner(gameObject)) {
                 anchor.SetPositionAndRotation(position, rotation);
                 owner.TeleportTo(position, rotation);
                 if (isManualSync) RequestSerialization();
-                _UncheckedUse();
+                UncheckedUse();
                 return true;
             }
             return false;
         }
 
-        void _UncheckedUse() {
+        void UncheckedUse() {
             SendCustomEventDelayedFrames(nameof(_DeferUse), 0);
             station.PlayerMobility = VRCStation.Mobility.Mobile;
         }
 
-        public void _DeferUse() {
+        #if COMPILER_UDONSHARP
+        public
+        #endif
+        void _DeferUse() {
             if (!Networking.IsOwner(gameObject)) return;
             station.UseStation(owner);
             Debug.Log("DeferUse");
             SendCustomEventDelayedFrames(nameof(_UpdateMobility), 0);
         }
 
-        public void Exit() {
+        #if COMPILER_UDONSHARP
+        public
+        #else
+        internal
+        #endif
+        void _Exit() {
             station.ExitStation(owner);
             if (Networking.IsOwner(gameObject) && isManualSync) RequestSerialization();
         }
-
-        public void TeleportTo(Vector3 position, Quaternion rotation) {
+        
+        #if COMPILER_UDONSHARP
+        public
+        #else
+        internal
+        #endif
+        void TeleportTo(Vector3 position, Quaternion rotation) {
             if (!Networking.IsOwner(gameObject)) {
                 Networking.LocalPlayer.TeleportTo(position, rotation);
                 return;
@@ -169,12 +219,15 @@ namespace JLChnToZ.VRC.AGE {
             SendCustomEventDelayedFrames(nameof(_DeferTeleport), 0);
         }
 
-        public void _DeferTeleport() {
+        #if COMPILER_UDONSHARP
+        public
+        #endif
+        void _DeferTeleport() {
             if (!Networking.IsOwner(gameObject)) return;
             station.ExitStation(owner);
             owner.TeleportTo(teleportPosition, teleportRotation);
             anchor.SetPositionAndRotation(teleportPosition, teleportRotation);
-            _UncheckedUse();
+            UncheckedUse();
         }
 
         public override void OnPreSerialization() {
