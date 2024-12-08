@@ -62,3 +62,8 @@ crashlytics-build.properties
 Assets/PackageMakerWindowData.asset*
 .idea
 .vscode
+
+/[Aa]ssets/SerializedUdonPrograms.meta
+/[Aa]ssets/SerializedUdonPrograms/*
+/[Aa]ssets/UdonSharp.meta
+/[Aa]ssets/UdonSharp/*
