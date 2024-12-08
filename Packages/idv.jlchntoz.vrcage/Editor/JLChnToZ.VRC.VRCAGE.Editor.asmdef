@@ -1,22 +1,26 @@
 {
-  "name": "JLChnToZ.VRC.VRCAGE.Editor",
-  "references": [
-    "VRC.SDK3",
-    "VRC.SDK3.Editor",
-    "VRC.SDKBase",
-    "VRC.SDKBase.Editor",
-    "UdonSharp.Runtime",
-    "UdonSharp.Editor",
-    "JLChnToZ.VRC.Foundation",
-    "JLChnToZ.VRC.Foundation.Editor",
-    "JLChnToZ.VRC.VRCAGE"
-  ],
-  "includePlatforms": [],
-  "excludePlatforms": [],
-  "allowUnsafeCode": false,
-  "autoReferenced": true,
-  "overrideReferences": false,
-  "precompiledReferences": [],
-  "defineConstraints": [],
-  "optionalUnityReferences": []
+    "name": "JLChnToZ.VRC.VRCAGE.Editor",
+    "rootNamespace": "JLChnToZ.VRC.VRCAGE.Editors",
+    "references": [
+        "VRC.SDK3",
+        "VRC.SDK3.Editor",
+        "VRC.SDKBase",
+        "VRC.SDKBase.Editor",
+        "UdonSharp.Runtime",
+        "UdonSharp.Editor",
+        "JLChnToZ.VRC.Foundation",
+        "JLChnToZ.VRC.Foundation.Editor",
+        "JLChnToZ.VRC.VRCAGE"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

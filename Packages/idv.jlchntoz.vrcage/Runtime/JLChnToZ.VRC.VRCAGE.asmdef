@@ -1,5 +1,6 @@
 {
     "name": "JLChnToZ.VRC.VRCAGE",
+    "rootNamespace": "JLChnToZ.VRC.VRCAGE",
     "references": [
         "VRC.SDKBase",
         "VRC.SDK3",
